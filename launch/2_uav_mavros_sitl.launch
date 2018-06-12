@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<launch>  
+    <include file="$(find px4)/launch/gazebo_mavros.launch"/>
+
+
+    <!-- change this to concentrationConfig, bearingConfig, rangeConfig -->
+    <arg name="type" default="rangeConfig"/>
+    <arg name="offboard" value="true"/>
+    <arg name="rvizPlot" value="true"/>
+    <arg name="add_pos_noise" value="true"/>
+    <arg name="noisePCov" value="2.0"/>
+    
+    <!-- UAV1 -->
+    <group ns="uav1">
+      <!-- arg name="agent_num" default="0"/ -->
+      <include file="$(find px4)/launch/mavros_client_1.launch">
+      </include>
+
+      <node pkg="target" type="off_brd" name="uav_offbrd" output="screen" if="$(arg offboard)"/>
+
+      <remap from="/uav1/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav1/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav1/agent_local_data" to="/agent_local_data"/>	
+      <include file="$(find target)/launch/sensor.launch">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="1"/>
+      </include>
+
+      <include file="$(find target)/launch/pf.launch">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="1"/>
+      </include>
+
+      <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz"/>
+
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="gps2pose" output="log" respawn="true">
+	<param name="tf_child_frame_id" value="gps_receiver1" type="str"/>
+	<param name="add_noise" value="$(arg add_pos_noise)" type="bool"/>
+	<param name="noiseCov" value="$(arg noisePCov)" type="double"/>
+      </node>
+      
+    </group>
+
+
+    
+    <!-- UAV2 -->
+    <group ns="uav2">
+      <!-- arg name="agent_num" default="0"/ -->
+      <include file="$(find px4)/launch/mavros_client_2.launch">
+      </include>
+
+      <node pkg="target" type="off_brd" name="uav_offbrd" output="screen" if="$(arg offboard)"/>
+
+      <remap from="/uav2/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav2/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav2/agent_local_data" to="/agent_local_data"/>	
+      <include file="$(find target)/launch/sensor.launch">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="2"/>
+      </include>
+
+      <include file="$(find target)/launch/pf.launch">
+	<arg name="type" value="$(arg type)"/>	
+	<arg name="agent_number" value="2"/>
+      </include>
+      
+      <!-- node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_2.rviz"/ -->
+	    
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="gps2pose" output="log" respawn="true">
+	<param name="tf_child_frame_id" value="gps_receiver2" type="str"/>
+	<param name="add_noise" value="$(arg add_pos_noise)" type="bool"/>
+	<param name="noiseCov" value="$(arg noisePCov)" type="double"/>
+      </node>
+      
+    </group>
+        
+    <include file="$(find target)/launch/setHome.launch">
+    </include>
+    
+</launch>
