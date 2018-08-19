@@ -1,80 +1,105 @@
 <?xml version="1.0"?>
 <launch>  
-    <include file="$(find px4)/launch/gazebo_mavros.launch"/>
-
-
-    <!-- change this to concentrationConfig, bearingConfig, rangeConfig -->
+  
     <arg name="type" default="rangeConfig"/>
+    <arg name="pf" value="true"/>
+    <arg name="sensor" value="true"/> <!-- this sets home params think about separating this -->
     <arg name="offboard" value="true"/>
+    <arg name="cluster" value="true"/>
     <arg name="rvizPlot" value="true"/>
-    <arg name="add_pos_noise" value="true"/>
-    <arg name="noisePCov" value="2.0"/>
+    <arg name="agents" value="2"/>
     
-    <!-- UAV1 -->
+    <include file="$(find px4)/launch/gazebo_mavros.launch"/>
+    
+    <!-- UAV1 FIX ME: put this group into separate launch with args to make clean launch files-->
     <group ns="uav1">
-      <!-- arg name="agent_num" default="0"/ -->
-      <include file="$(find px4)/launch/mavros_client_1.launch">
+      <arg name="agent_num" value="1"/>      
+      <include file="$(find px4)/launch/mavros_client_$(arg agent_num).launch">
       </include>
 
-      <node pkg="target" type="off_brd" name="uav_offbrd" output="screen" if="$(arg offboard)"/>
-
-      <remap from="/uav1/agent_home_data" to="/agent_home_data"/>
-      <remap from="/uav1/agent_mps_data" to="/agent_mps_data"/>
-      <remap from="/uav1/agent_local_data" to="/agent_local_data"/>	
-      <include file="$(find target)/launch/sensor.launch">
-	<arg name="type" value="$(arg type)"/>
-	<arg name="agent_number" value="1"/>
-      </include>
-
-      <include file="$(find target)/launch/pf.launch">
-	<arg name="type" value="$(arg type)"/>
-	<arg name="agent_number" value="1"/>
-      </include>
-
-      <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz"/>
-
-      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="gps2pose" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver1" type="str"/>
-	<param name="add_noise" value="$(arg add_pos_noise)" type="bool"/>
-	<param name="noiseCov" value="$(arg noisePCov)" type="double"/>
+      <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
+	<param name="agent_number" value="$(arg agent_num)" type="int"/>
       </node>
-      
+
+      <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>	
+      <include file="$(find target)/launch/sensor.launch" if="$(arg sensor)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
+      <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="log" value="screen"/>
+      </include>
+
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true" if="$(arg sensor)">
+	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+      </node>
+
+      <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="numHistory_targetCenter" value="5"/>
+	<arg name="numHistory_desiredPose" value="20"/>
+	<arg name="sim" value="true"/>
+	<arg name="step" value="5"/>
+	<arg name="log" value="log"/>
+      </include>      
     </group>
-
-
     
     <!-- UAV2 -->
     <group ns="uav2">
-      <!-- arg name="agent_num" default="0"/ -->
-      <include file="$(find px4)/launch/mavros_client_2.launch">
+      <arg name="agent_num" value="2"/>
+      <include file="$(find px4)/launch/mavros_client_$(arg agent_num).launch">
       </include>
 
-      <node pkg="target" type="off_brd" name="uav_offbrd" output="screen" if="$(arg offboard)"/>
+      <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
+	<param name="agent_number" value="$(arg agent_num)" type="int"/>
+      </node>
 
-      <remap from="/uav2/agent_home_data" to="/agent_home_data"/>
-      <remap from="/uav2/agent_mps_data" to="/agent_mps_data"/>
-      <remap from="/uav2/agent_local_data" to="/agent_local_data"/>	
-      <include file="$(find target)/launch/sensor.launch">
+      <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>      
+      <include file="$(find target)/launch/sensor.launch" if="$(arg sensor)">
 	<arg name="type" value="$(arg type)"/>
-	<arg name="agent_number" value="2"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
       </include>
 
-      <include file="$(find target)/launch/pf.launch">
-	<arg name="type" value="$(arg type)"/>	
-	<arg name="agent_number" value="2"/>
+      <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="log" value="log"/>
       </include>
-      
-      <!-- node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_2.rviz"/ -->
-	    
-      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="gps2pose" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver2" type="str"/>
-	<param name="add_noise" value="$(arg add_pos_noise)" type="bool"/>
-	<param name="noiseCov" value="$(arg noisePCov)" type="double"/>
+      	    
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true" if="$(arg sensor)">
+	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
       </node>
       
+      <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="numHistory_targetCenter" value="5"/>
+	<arg name="numHistory_desiredPose" value="20"/>
+	<arg name="sim" value="true"/>
+	<arg name="step" value="5"/>
+	<arg name="log" value="log"/>
+      </include>
     </group>
-        
+
+    <remap from="/enif_ground_homeSim/agent_home_data" to="/agent_home_data"/>
     <include file="$(find target)/launch/setHome.launch">
+      	<arg name="agents" value="$(arg agents)"/>
     </include>
+
+    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>
+
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL"/>
     
 </launch>

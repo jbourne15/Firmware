@@ -13,29 +13,33 @@
         <arg name="fcu_url" default="udp://:14541@localhost:14559"/>
         <!-- PX4 SITL and vehicle spawn -->
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="2"/>
-            <arg name="y" value="0"/>
-            <arg name="z" value="0"/>
-            <arg name="R" value="0"/>
-            <arg name="P" value="0"/>
-            <arg name="Y" value="0"/>
-            <arg name="vehicle" value="$(arg vehicle)"/>
-            <arg name="rcS" value="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
-            <arg name="mavlink_udp_port" value="14562"/>
-            <arg name="ID" value="$(arg ID)"/>
+          <arg name="x" value="5"/>
+          <arg name="y" value="-5"/>
+          <arg name="z" value="0"/>
+          <arg name="R" value="0"/>
+          <arg name="P" value="0"/>
+          <arg name="Y" value="1.5708"/>
+          <arg name="vehicle" value="$(arg vehicle)"/>
+          <arg name="rcS" value="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
+          <arg name="mavlink_udp_port" value="14562"/>
+          <arg name="ID" value="$(arg ID)"/>
         </include>
         <!-- MAVROS -->
         <include file="$(find mavros)/launch/px4.launch">
-	    <arg name="log_output" default="log" />
-            <arg name="fcu_url" value="$(arg fcu_url)"/>
-            <arg name="gcs_url" value=""/>
-            <arg name="tgt_system" value="$(arg ID)"/>
-            <arg name="tgt_component" value="1"/>
+	  <arg name="log_output" default="log" />
+          <arg name="fcu_url" value="$(arg fcu_url)"/>
+          <arg name="gcs_url" value=""/>
+          <arg name="tgt_system" value="$(arg ID)"/>
+          <arg name="tgt_component" value="1"/>
         </include>
 	<param name="/uav2/mavros/global_position/tf/send" value="true" type="bool" />
 	<param name="/uav2/mavros/global_position/tf/child_frame_id" value="base_link2" type="str" />
 	<param name="/uav2/mavros/global_position/tf/frame_id" value="home2" type="str" />
 	<param name="/uav2/mavros/global_position/frame_id" value="home2" type="str" />
 
+	<param name="/$(arg quadName)/mavros/local_position/tf/send" value="true" type="bool" />
+	<param name="/$(arg quadName)/mavros/local_position/tf/child_frame_id" value="base_link2_lc" type="str" />
+	<param name="/$(arg quadName)/mavros/local_position/tf/frame_id" value="home2_lc" type="str" />
+	<param name="/$(arg quadName)/mavros/local_position/frame_id" value="home2_lc" type="str" />
     
 </launch>
