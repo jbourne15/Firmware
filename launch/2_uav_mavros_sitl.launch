@@ -8,7 +8,8 @@
     <arg name="cluster" value="true"/>
     <arg name="rvizPlot" value="true"/>
     <arg name="agents" value="2"/>
-    
+
+    <param name="runAlg" value="PF" type="string"/>
     <include file="$(find px4)/launch/gazebo_mavros.launch"/>
     
     <!-- UAV1 FIX ME: put this group into separate launch with args to make clean launch files-->
