@@ -1,62 +1,79 @@
 <?xml version="1.0"?>
-<launch>
-    <!-- MAVROS posix SITL environment launch script -->
-    <!-- launches Gazebo environment and 2x: MAVROS, PX4 SITL, and spawns vehicle -->
-    <!-- vehicle model and world -->
-    <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="iris"/>
-    <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
-    <!-- gazebo configs -->
-    <arg name="gui" default="false"/>
-    <arg name="debug" default="false"/>
-    <arg name="verbose" default="false"/>
-    <arg name="paused" default="false"/>
-    <!-- Gazebo sim -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="gui" value="$(arg gui)"/>
-        <arg name="world_name" value="$(arg world)"/>
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="verbose" value="$(arg verbose)"/>
-        <arg name="paused" value="$(arg paused)"/>
-    </include>
-
-
-    <!-- change this to concentrationConfig, bearingConfig, rangeConfig -->
-    <arg name="type" default="rangeConfig"/>
+<launch>  
+  
+    <arg name="type" default="concentrationConfig"/>
+    <arg name="pf" value="true"/>
     
+    <arg name="mpsSensor" value="false"/>
+    <arg name="moxSensor" value="false"/>
+    <arg name="magSensor" value="true"/>
     
-    <!-- UAV1 -->
+    <arg name="offboard" value="false"/>
+    <arg name="cluster" value="false"/>
+    <arg name="rvizPlot" value="true"/>
+    <arg name="agents" value="1"/>
+
+    <param name="runAlg" value="PF" type="string"/>
+    <include file="$(find px4)/launch/gazebo_mavros.launch"/>
+
+    <param name="gps_ref_latitude"  value="40.7690202426"  type="double"/>
+    <param name="gps_ref_longitude" value="-111.847990795" type="double"/>
+    <param name="gps_ref_altitude"  value="1293.40586"         type="double"/>
+    <param name="gps_ref_is_init"   value="true"           type="bool"/>
+
+    <!-- UAV1 FIX ME: put this group into separate launch with args to make clean launch files-->
     <group ns="uav1">
-        <!-- MAVROS and vehicle configs -->        
-        <arg name="ID" value="1"/>
-        <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
-        <!-- PX4 SITL and vehicle spawn -->
-        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="0"/>
-            <arg name="y" value="0"/>
-            <arg name="z" value="0"/>
-            <arg name="R" value="0"/>
-            <arg name="P" value="0"/>
-            <arg name="Y" value="0"/>
-            <arg name="vehicle" value="$(arg vehicle)"/>
-            <arg name="rcS" value="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
-            <arg name="mavlink_udp_port" value="14560"/>
-            <arg name="ID" value="$(arg ID)"/>
-        </include>
-        <!-- MAVROS -->
-        <include file="$(find mavros)/launch/px4.launch">
-            <arg name="fcu_url" value="$(arg fcu_url)"/>
-            <arg name="gcs_url" value=""/>
-            <arg name="tgt_system" value="$(arg ID)"/>
-            <arg name="tgt_component" value="1"/>
-        </include>
-	<param name="/uav1/mavros/global_position/tf/send" value="true" type="bool" />
-	<param name="/uav1/mavros/global_position/tf/child_frame_id" value="base_link1" type="str" />
-	<param name="/uav1/mavros/global_position/tf/frame_id" value="home1" type="str" />
-	<param name="/uav1/mavros/global_position/frame_id" value="home1" type="str" />
-
-
-	
-    </group>
+      <arg name="agent_num" value="1"/>      
+      <include file="$(find px4)/launch/mavros_client_$(arg agent_num).launch">
+      </include>
       
+      <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
+	<param name="agent_number" value="$(arg agent_num)" type="int"/>
+      </node>
+
+      <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
+      <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>
+      <include file="$(find target)/launch/sensor.launch" if="$(arg mpsSensor)">
+	<arg name="sName" value="mps"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+
+
+      <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="log" value="screen"/>
+      </include>
+
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
+	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+      </node>
+
+      <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="agents" value="$(arg agents)"/>
+	<arg name="numHistory_targetCenter" value="5"/>
+	<arg name="numHistory_desiredPose" value="20"/>
+	<arg name="sim" value="true"/>
+	<arg name="step" value="5"/>
+	<arg name="log" value="log"/>
+      </include>      
+    </group>
+    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>
+
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav1/mps_data/temperature /uav1/mps_data/pressure"/>
+    
 </launch>
