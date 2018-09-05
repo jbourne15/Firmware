@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <launch>  
   
-    <arg name="type" default="rangeConfig"/>
-    <arg name="pf" value="true"/>
-    <arg name="mpsSensor" value="true"/>
-    <arg name="moxSensor" value="true"/>
-    <arg name="offboard" value="true"/>
-    <arg name="cluster" value="true"/>
+    <arg name="type" default="concentrationConfig"/>
+    <arg name="pf" value="false"/>
+    <arg name="mpsSensor" value="false"/>
+    <arg name="moxSensor" value="false"/>
+    <arg name="magSensor" value="true"/>
+    <arg name="offboard" value="false"/>
+    <arg name="cluster" value="false"/>
     <arg name="rvizPlot" value="true"/>
     <arg name="agents" value="2"/>
 
@@ -37,6 +38,14 @@
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="topic_name" value="mps_data"/>
       </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+
 
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
@@ -71,14 +80,14 @@
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
       </node>
 
+      <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
+      <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>      
       <include file="$(find target)/launch/sensor.launch" if="$(arg mpsSensor)">
 	<arg name="sName" value="mps"/>
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="topic_name" value="mps_data"/>
-	<remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
-	<remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
-	<remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>      
       </include>
 
       <include file="$(find target)/launch/sensor.launch" if="$(arg moxSensor)">
@@ -86,6 +95,13 @@
 	<arg name="topic_name" value="mox_data"/>
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
       </include>
 
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
