@@ -78,7 +78,7 @@
 	<arg name="log" value="log"/>
       </include>      
     </group>
-    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>    
+    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_mag.rviz" respawn="true"/>    
 
     <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav1/mps_data/temperature /uav1/mps_data/pressure"/>
     
