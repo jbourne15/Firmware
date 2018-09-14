@@ -5,14 +5,14 @@
     <arg name="pf" value="true"/>
     
     <arg name="mpsSensor" value="true"/>
-    <arg name="moxSensor" value="false"/>
+    <arg name="moxSensor" value="true"/>
     <arg name="magSensor" value="false"/>
     
     <arg name="offboard" value="true"/>
     <arg name="cluster" value="true"/>
     <arg name="rvizPlot" value="true"/>
     <arg name="agents" value="2"/>
-    <arg name="plotM" value="false"/>
+    <arg name="plotM" value="true"/>
 
     <param name="runAlg" value="PF" type="string"/>
     <include file="$(find px4)/launch/gazebo_mavros.launch"/>
@@ -42,6 +42,14 @@
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="topic_name" value="mps_data"/>
       </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg moxSensor)">
+	<arg name="sName" value="mox"/>
+	<arg name="topic_name" value="mox_data"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
 
       <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
 	<arg name="sName" value="mag"/>
@@ -136,6 +144,8 @@
 
     <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>
 
-    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL"/>
-    
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav1/mox_data/percentLEL /uav2/mps_data/percentLEL /uav2/mox_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg moxSensor)"/>
+
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg mpsSensor)"/>
+
 </launch>
