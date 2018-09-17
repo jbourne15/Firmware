@@ -2,17 +2,20 @@
 <launch>  
   
     <arg name="type" default="concentrationConfig"/>
-    <arg name="pf" value="true"/>
     
-    <arg name="mpsSensor" value="true"/>
-    <arg name="moxSensor" value="true"/>
+    <arg name="mpsSensor" value="false"/>
+    <arg name="moxSensor" value="false"/>
+    <arg name="pidSensor" value="true"/>  <!-- GADEN plume -->
     <arg name="magSensor" value="false"/>
-    
+
+    <arg name="pf" value="true"/>
     <arg name="offboard" value="true"/>
     <arg name="cluster" value="true"/>
     <arg name="rvizPlot" value="true"/>
     <arg name="agents" value="2"/>
     <arg name="plotM" value="true"/>
+
+    <arg name="sensorFrame" value="gps"/>
 
     <param name="runAlg" value="PF" type="string"/>
     <include file="$(find px4)/launch/gazebo_mavros.launch"/>
@@ -50,14 +53,19 @@
 	<arg name="agent_number" value="$(arg agent_num)"/>
       </include>
 
-
       <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
 	<arg name="sName" value="mag"/>
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="topic_name" value="mps_data"/>
       </include>
-
+      
+      <include file="$(find gaden_demo)/launch/gaden_sensor.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+	<arg name="sensorFrame" value="$(arg sensorFrame)$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
 
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
@@ -65,10 +73,10 @@
 	<arg name="agents" value="$(arg agents)"/>
 	<arg name="log" value="log"/>
 	<arg name="plotMMSE" default="$(arg plotM)"/>
-      </include>
+      </include>      
 
       <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+	<param name="tf_child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="str"/>
       </node>
 
       <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
@@ -118,6 +126,13 @@
 	<arg name="topic_name" value="mps_data"/>
       </include>
 
+      <include file="$(find gaden_demo)/launch/gaden_sensor.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+	<arg name="sensorFrame" value="$(arg sensorFrame)$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
@@ -127,7 +142,7 @@
       </include>
       	    
       <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+	<param name="tf_child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="str"/>
       </node>
       
       <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
@@ -140,12 +155,17 @@
 	<arg name="step" value="5"/>
 	<arg name="log" value="screen"/>
       </include>
-    </group>
+    </group>    
+
+    <include file="$(find gaden_demo)/launch/gaden_plume.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+    </include>
+
 
     <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>
 
     <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav1/mox_data/percentLEL /uav2/mps_data/percentLEL /uav2/mox_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg moxSensor)"/>
 
-    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg mpsSensor)"/>
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(eval arg('pidSensor') or arg('mpsSensor'))"/>
 
 </launch>
