@@ -9,14 +9,18 @@
     <arg name="magSensor" value="false"/>
 
     <arg name="pf" value="true"/>
-    <arg name="offboard" value="true"/>
-    <arg name="cluster" value="true"/>
-    <arg name="info" value="false"/>
+    <arg name="offboard" value="false"/>
+    <arg name="geometry" value="true"/>
+    <arg name="cluster" value="false"/>
+    <arg name="info" value="true"/>
     <arg name="agents" value="2"/>
     <arg name="rvizPlot" value="true"/>
-    <arg name="plotM" value="true"/>
+    <arg name="plotM" value="false"/>
 
     <arg name="sensorFrame" value="gps"/>
+
+    <arg name="command_input" default="2" />
+    <arg name="gazebo_simulation" default="true" />
 
     <param name="runAlg" value="PF" type="string"/>
     <include file="$(find px4)/launch/gazebo_mavros.launch"/>
@@ -34,6 +38,13 @@
       
       <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
+      </node>
+
+      <node pkg="geometric_controller" type="geometric_controller" name="geometric_controller" output="screen" if="$(arg geometry)">
+	<param name="mav_name" type="string" value="uav$(arg agent_num)" />
+        <remap from="/uav$(arg agent_num)/command/bodyrate_command" to="/uav$(arg agent_num)/mavros/setpoint_raw/attitude"/>
+        <param name="ctrl_mode" value="$(arg command_input)" />
+        <param name="enable_sim" value="$(arg gazebo_simulation)" />
       </node>
 
       <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
@@ -110,6 +121,13 @@
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
       </node>
 
+      <node pkg="geometric_controller" type="geometric_controller" name="geometric_controller" output="log" if="$(arg geometry)">
+	<param name="mav_name" type="string" value="uav$(arg agent_num)" />
+        <remap from="/uav$(arg agent_num)/command/bodyrate_command" to="/uav$(arg agent_num)/mavros/setpoint_raw/attitude"/>
+        <param name="ctrl_mode" value="$(arg command_input)" />
+        <param name="enable_sim" value="$(arg gazebo_simulation)" />
+      </node>
+
       <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
       <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
       <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
@@ -179,10 +197,10 @@
     </include>
 
 
-    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_1.rviz" respawn="true"/>
+    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_info.rviz" respawn="true"/>
 
-    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mps_data/percentLEL /uav1/mox_data/percentLEL /uav2/mps_data/percentLEL /uav2/mox_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg moxSensor)"/>
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" args="/uav1/mavros/setpoint_raw/attitude/thrust /uav1/mox_data/percentLEL /uav2/mps_data/percentLEL /uav2/mox_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(arg moxSensor)"/>
 
-    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" args="/uav1/mps_data/percentLEL /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(eval arg('pidSensor') or arg('mpsSensor'))"/>
+    <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" args="/uav1/mavros/setpoint_raw/attitude/thrust /uav2/mps_data/percentLEL /agent_mps_data/mps/percentLEL" if="$(eval arg('pidSensor') or arg('mpsSensor'))"/>
 
 </launch>

@@ -33,10 +33,11 @@
         <arg name="respawn_gazebo" value="$(arg respawn_gazebo)"/>
     </include>
     <param name="/mavros/global_position/tf/send" value="true" type="bool" />
+    <!--
     <param name="/mavros/global_position/tf/child_frame_id" value="base_link" type="str" />
     <param name="/mavros/global_position/tf/frame_id" value="home" type="str" />
     <param name="/mavros/global_position/frame_id" value="home" type="str" />
-
+    -->
     
     <!-- gazebo model -->
     <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -file $(arg sdf) -model $(arg vehicle) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>

@@ -1,14 +1,21 @@
 <?xml version="1.0"?>
 <launch>  
   
-    <arg name="type" default="rangeConfig"/>
-    <arg name="pf" value="true"/>
+    <arg name="type" default="concentrationConfig"/>
+    
     <arg name="mpsSensor" value="true"/>
-    <arg name="moxSensor" value="true"/>
+    <arg name="moxSensor" value="false"/>
+    <arg name="pidSensor" value="false"/>  <!-- GADEN plume -->
+    <arg name="magSensor" value="false"/>
+
+    <arg name="pf" value="true"/>
     <arg name="offboard" value="true"/>
     <arg name="cluster" value="true"/>
     <arg name="rvizPlot" value="true"/>
     <arg name="agents" value="3"/>
+    <arg name="plotM" value="true"/>
+
+    <arg name="sensorFrame" value="gps"/>
 
     <param name="runAlg" value="PF" type="string"/>
     <include file="$(find px4)/launch/gazebo_mavros.launch"/>
@@ -17,20 +24,21 @@
     <param name="gps_ref_longitude" value="-111.847990795" type="double"/>
     <param name="gps_ref_altitude"  value="1293.40586"         type="double"/>
     <param name="gps_ref_is_init"   value="true"           type="bool"/>
-    
+
     <!-- UAV1 FIX ME: put this group into separate launch with args to make clean launch files-->
     <group ns="uav1">
       <arg name="agent_num" value="1"/>      
       <include file="$(find px4)/launch/mavros_client_$(arg agent_num).launch">
       </include>
-
+      
       <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
       </node>
 
+      <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
       <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
       <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
-      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>	
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>
       <include file="$(find target)/launch/sensor.launch" if="$(arg mpsSensor)">
 	<arg name="sName" value="mps"/>
 	<arg name="type" value="$(arg type)"/>
@@ -38,27 +46,48 @@
 	<arg name="topic_name" value="mps_data"/>
       </include>
 
+      <include file="$(find target)/launch/sensor.launch" if="$(arg moxSensor)">
+	<arg name="sName" value="mox"/>
+	<arg name="topic_name" value="mox_data"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+      
+      <include file="$(find gaden_demo)/launch/gaden_sensor.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+	<arg name="sensorFrame" value="$(arg sensorFrame)$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
 
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
-	<arg name="log" value="screen"/>
-      </include>
+	<arg name="log" value="log"/>
+	<arg name="plotMMSE" default="$(arg plotM)"/>
+      </include>      
 
       <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+	<param name="tf_child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="str"/>
       </node>
 
       <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
-	<arg name="numHistory_targetCenter" value="20"/>
+	<arg name="numHistory_targetCenter" value="5"/>
 	<arg name="numHistory_desiredPose" value="20"/>
 	<arg name="sim" value="true"/>
 	<arg name="step" value="5"/>
-	<arg name="log" value="screen"/>
+	<arg name="log" value="log"/>
       </include>      
     </group>
     
@@ -74,7 +103,8 @@
 
       <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
       <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
-      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>	
+      <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>      
       <include file="$(find target)/launch/sensor.launch" if="$(arg mpsSensor)">
 	<arg name="sName" value="mps"/>
 	<arg name="type" value="$(arg type)"/>
@@ -89,28 +119,43 @@
 	<arg name="agent_number" value="$(arg agent_num)"/>
       </include>
 
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+
+      <include file="$(find gaden_demo)/launch/gaden_sensor.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+	<arg name="sensorFrame" value="$(arg sensorFrame)$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
-	<arg name="log" value="log"/>
+	<arg name="log" value="screen"/>
+	<arg name="plotMMSE" default="$(arg plotM)"/>
       </include>
       	    
       <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+	<param name="tf_child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="str"/>
       </node>
       
       <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
-	<arg name="numHistory_targetCenter" value="20"/>
+	<arg name="numHistory_targetCenter" value="5"/>
 	<arg name="numHistory_desiredPose" value="20"/>
 	<arg name="sim" value="true"/>
 	<arg name="step" value="5"/>
-	<arg name="log" value="log"/>
+	<arg name="log" value="screen"/>
       </include>
-    </group>
+    </group>    
 
     <!-- UAV3 -->
     <group ns="uav3">
@@ -124,7 +169,8 @@
 
       <remap from="/uav$(arg agent_num)/agent_home_data" to="/agent_home_data"/>
       <remap from="/uav$(arg agent_num)/agent_mps_data" to="/agent_mps_data"/>
-      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>	
+      <remap from="/uav$(arg agent_num)/agent_source_data" to="/agent_source_data"/>
+      <remap from="/uav$(arg agent_num)/agent_local_data" to="/agent_local_data"/>      
       <include file="$(find target)/launch/sensor.launch" if="$(arg mpsSensor)">
 	<arg name="sName" value="mps"/>
 	<arg name="type" value="$(arg type)"/>
@@ -132,28 +178,54 @@
 	<arg name="topic_name" value="mps_data"/>
       </include>
 
+      <include file="$(find target)/launch/sensor.launch" if="$(arg moxSensor)">
+	<arg name="sName" value="mox"/>
+	<arg name="topic_name" value="mox_data"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
+      <include file="$(find target)/launch/sensor.launch" if="$(arg magSensor)">
+	<arg name="sName" value="mag"/>
+	<arg name="type" value="$(arg type)"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+      </include>
+
+      <include file="$(find gaden_demo)/launch/gaden_sensor.launch" if="$(arg pidSensor)">
+	<arg name="log" value="log"/>
+	<arg name="sensorFrame" value="$(arg sensorFrame)$(arg agent_num)"/>
+	<arg name="topic_name" value="mps_data"/>
+	<arg name="agent_number" value="$(arg agent_num)"/>
+      </include>
+
       <include file="$(find target)/launch/pf.launch" if="$(arg pf)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
 	<arg name="log" value="log"/>
+	<arg name="plotMMSE" default="$(arg plotM)"/>
       </include>
       	    
       <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="log" respawn="true">
-	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+	<param name="tf_child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="str"/>
       </node>
       
       <include file="$(find target)/launch/cluster.launch" if="$(arg cluster)">
 	<arg name="type" value="$(arg type)"/>
 	<arg name="agent_number" value="$(arg agent_num)"/>
 	<arg name="agents" value="$(arg agents)"/>
-	<arg name="numHistory_targetCenter" value="20"/>
+	<arg name="numHistory_targetCenter" value="5"/>
 	<arg name="numHistory_desiredPose" value="20"/>
 	<arg name="sim" value="true"/>
 	<arg name="step" value="5"/>
 	<arg name="log" value="log"/>
       </include>
     </group>
+
+    <include file="$(find gaden_demo)/launch/gaden_plume.launch" if="$(arg pidSensor)">
+	<arg name="log" value="screen"/>
+    </include>
 
     <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_3.rviz" respawn="true"/>
 

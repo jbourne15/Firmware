@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<launch>  
+    <arg name="rvizPlot" value="true"/>    
+
+    <include file="$(find px4)/launch/gazebo_mavros.launch">
+       <arg name="gui" default="true"/>
+    </include>
+
+    <param name="gps_ref_latitude"  value="40.7690202426"  type="double"/>
+    <param name="gps_ref_longitude" value="-111.847990795" type="double"/>
+    <param name="gps_ref_altitude"  value="1293.40586"         type="double"/>
+    <param name="gps_ref_is_init"   value="true"           type="bool"/>
+
+    <arg name="command_input" default="2" />
+    <arg name="gazebo_simulation" default="true" />
+    
+    <!-- UAV1 FIX ME: put this group into separate launch with args to make clean launch files-->
+    <group ns="uav1">
+      <arg name="agent_num" value="1"/>      
+      <include file="$(find px4)/launch/mavros_client_$(arg agent_num).launch">
+      </include>
+      
+      <node pkg="mavros_extras" type="copter_visualization" name="quad_vis" respawn="true">
+	<param name="fixed_frame_id" value="/world" type="string"/>
+	<param name="child_frame_id" value="/gps_receiver$(arg agent_num)" type="string"/>
+	<param name="marker_scale" value="3" type="double"/>
+    </node>
+
+      <node pkg="geodetic_utils" type="gps_to_pose_conversion_node" name="geodetic" output="screen" respawn="true">
+	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
+      </node>
+      
+      <node pkg="geometric_controller" type="geometric_controller" name="geometric_controller" output="screen">
+	<param name="mav_name" type="string" value="uav1" />
+        <remap from="/uav1/command/bodyrate_command" to="/uav1/mavros/setpoint_raw/attitude"/>
+        <param name="ctrl_mode" value="$(arg command_input)" />
+        <param name="enable_sim" value="$(arg gazebo_simulation)" />
+      </node>
+
+      <node pkg="trajectory_publisher" type="trajectory_publisher" name="trajectory_publisher" output="screen">
+        <param name="initpos_x" value="0" type="double"/>
+	<param name="initpos_y" value="0" type="double"/>
+	<param name="initpos_z" value="0" type="double"/>
+	<param name="trajectoryID" value="3" type="int"/>
+	<param name="mode" value="2" type="int"/>
+      </node>
+
+    </group>
+    
+    <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find geometric_controller)/launch/config_file.rviz" respawn="true"/>    
+
+</launch>
