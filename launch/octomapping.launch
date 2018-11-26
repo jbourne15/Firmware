@@ -24,15 +24,10 @@
 	<param name="tf_child_frame_id" value="gps_receiver$(arg agent_num)" type="str"/>
       </node>
 
-      <node pkg="target" type="convertScan2Cloud" name="s2c" output="screen" respawn="true">
-      </node>
+      <include file="$(find target)/launch/octomap.launch">
+	<arg name="AGENT_NUMBER" default="$(arg agent_num)"/>
+	</include>
 
-      <include file="$(find octomap_server)/launch/octomap_mapping.launch">
-        <param name="frame_id" value="world" type="string"/>
-	<remap from="cloud_in" to ="/cloud"/>
-      </include>      
-    
     <node pkg="rviz" type="rviz" name="rviz" if="$(arg rvizPlot)" args="-d $(find target)/rviz/rviz_octo.rviz" respawn="true"/>    
-
     
 </launch>

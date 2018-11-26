@@ -12,7 +12,7 @@
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
     <!--arg name="vehicle" value="iris_rplidar"/-->
-    <arg name="vehicle" value="iris_rplidar"/>
+    <arg name="vehicle" value="iris_hokuyo"/>
     <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
     <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
     <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
@@ -50,13 +50,12 @@
         <arg name="fcu_url" value="$(arg fcu_url)"/>
         <arg name="respawn_mavros" value="$(arg respawn_mavros)"/>
     </include>
-    <node pkg="tf" type="static_transform_publisher" name="tf_broadcaster" args="0 0 0.1 0 0 0 base_link rplidar_link 100" />
-    <node pkg="tf" type="static_transform_publisher" name="camera_tf_broadcaster" args=".1 0 0 0 0 0 base_link robot_camera_link 100" />
+    <!-- node pkg="tf" type="static_transform_publisher" name="tf_broadcaster" args="0 0 0.1 0 0 0 base_link rplidar_link 100" / -->
+    <!--node pkg="tf" type="static_transform_publisher" name="camera_tf_broadcaster" args=".1 0 0 0 0 0 base_link robot_camera_link 100" / -->
 
-    
-    <param name="/mavros/global_position/tf/send" value="true" type="bool" />
-    <param name="/mavros/global_position/tf/child_frame_id" value="base_link" type="str" />
-    <param name="/mavros/global_position/tf/frame_id" value="home" type="str" />
-    <param name="/mavros/global_position/frame_id" value="home" type="str" />
+    <!--param name="/mavros/global_position/tf/send" value="true" type="bool" /-->
+    <!--param name="/mavros/global_position/tf/child_frame_id" value="base_link" type="str" /-->
+    <!--param name="/mavros/global_position/tf/frame_id" value="home" type="str" /-->
+    <!--param name="/mavros/global_position/frame_id" value="home" type="str" /-->
     
 </launch>
