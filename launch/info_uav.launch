@@ -15,6 +15,7 @@
     <arg name="info" value="true"/>
     <arg name="agents" value="2"/>
     <arg name="rvizPlot" value="true"/>
+    <arg name="viz" value="true"/>
     <arg name="plotM" value="false"/>
 
     <arg name="sensorFrame" value="gps"/>
@@ -38,6 +39,12 @@
       
       <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
+      </node>
+
+      <node pkg="mavros_extras" type="copter_visualization" name="quad_vis" if="$(arg viz)" respawn="true">
+	<param name="fixed_frame_id" value="/world" type="string"/>
+	<param name="child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="string"/>
+	<param name="marker_scale" value="2" type="double"/>
       </node>
 
       <node pkg="geometric_controller" type="geometric_controller" name="geometric_controller" output="screen" if="$(arg geometry)">
@@ -119,6 +126,12 @@
 
       <node pkg="target" type="off_brd" name="off_brd" output="log" if="$(arg offboard)">
 	<param name="agent_number" value="$(arg agent_num)" type="int"/>
+      </node>
+
+      <node pkg="mavros_extras" type="copter_visualization" name="quad_vis" if="$(arg viz)" respawn="true">
+	<param name="fixed_frame_id" value="/world" type="string"/>
+	<param name="child_frame_id" value="$(arg sensorFrame)$(arg agent_num)" type="string"/>
+	<param name="marker_scale" value="2" type="double"/>
       </node>
 
       <node pkg="geometric_controller" type="geometric_controller" name="geometric_controller" output="log" if="$(arg geometry)">
