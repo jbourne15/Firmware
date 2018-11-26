@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>  
   
-    <arg name="type" default="concentrationConfig"/>
+    <arg name="type" default="magneticConfig"/>
     <arg name="pf" value="true"/>
     
     <arg name="mpsSensor" value="false"/>
